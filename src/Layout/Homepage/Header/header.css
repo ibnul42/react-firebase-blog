@@ -1,0 +1,6 @@
+.option {
+    position: absolute;
+    top: 100%;
+    left: none !important;
+    right: 0;
+}
