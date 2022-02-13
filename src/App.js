@@ -1,61 +1,43 @@
-import { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Link, Route, Routes } from 'react-router-dom';
 import './App.css';
-import Header from './Layout/Homepage/Header/Header';
-import Main from './Layout/Homepage/Main/Main';
-import { db } from './firebase-config';
-import { addDoc, collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore'
+import Home from './pages/Home';
+import Login from './pages/Login';
+import CreatePost from './pages/CreatePost';
+import NotFound from './pages/NotFound';
+import { useState } from 'react';
+import { signOut } from 'firebase/auth';
+import { auth } from './firebase-config';
 
 function App() {
-  const [newName, setNewName] = useState('');
-  const [age, setAge] = useState(0);
-  const [users, setUsers] = useState([]);
-  const userCollectionRef = collection(db, 'users');
-  console.log(userCollectionRef);
+  const [isAuth, setIsAuth] = useState(false);
 
-  useEffect(() => {
-    
-
-    getUsers();
-  }, []);
-
-  const getUsers = async () => {
-    const data = await getDocs(userCollectionRef);
-    setUsers(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-  }
-
-  const createUser = async () => {
-    await addDoc(userCollectionRef, { name: newName, age: Number(age) });
-    getUsers();
-  }
-
-  const updateUser = async (id, age) => {
-    const userDoc = doc(db, 'users', id);
-    const newFields = { age: age + 1 };
-    await updateDoc(userDoc, newFields);
-    getUsers();
-  }
-
-  const deleteUser = async (id) => {
-    const userDoc = doc(db, 'users', id);
-    await deleteDoc(userDoc);
-    getUsers();
+  const signOutUser = () => {
+    signOut(auth)
+      .then(() => {
+        setIsAuth(false);
+        localStorage.clear();
+        window.location.pathname = '/';
+      })
+      .catch((err) => {
+        console.log(err.message);
+      })
   }
 
   return (
-    <div className="">
-      <input type="text" placeholder="Name" onChange={(e) => setNewName(e.target.value)} />
-      <input type="text" placeholder="Age" onChange={(e) => setAge(e.target.value)} />
-      <button onClick={createUser} >Create User</button>
-      {users.map((user, id) => (
-        <div key={id}>
-          <h3>{user.name}</h3>
-          <p>{user.age}</p>
-          <button onClick={() => updateUser(user.id, user.age)}>Increase</button>
-          <button onClick={() => deleteUser(user.id)}>Delete</button>
-        </div>
-      ))}
-    </div>
-  );
+    <Router>
+      <nav>
+        <Link to='/'>Home</Link>
+        <Link to='/create-post'>Create Post</Link>
+        {!isAuth ? <Link to='/login'>Login</Link> : <Link to='/' onClick={signOutUser}>Logout</Link>}
+      </nav>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login setIsAuth={setIsAuth} />} />
+        <Route path="/create-post" element={<CreatePost />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Router>
+  )
 }
 
 export default App;
