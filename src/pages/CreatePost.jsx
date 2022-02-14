@@ -1,12 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { addDoc, collection } from 'firebase/firestore';
 import { auth, db } from '../firebase-config';
+import { useNavigate } from 'react-router-dom';
 
-function CreatePost() {
+function CreatePost({ isAuth }) {
   const [title, setTitle] = useState('');
   const [postText, setPostText] = useState('');
 
   const postCollectionRef = collection(db, 'posts');
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isAuth) {
+      navigate('/login');
+    }
+  })
 
   const createPost = async () => {
     await addDoc(postCollectionRef, {
@@ -17,12 +26,12 @@ function CreatePost() {
         id: auth.currentUser.uid
       }
     })
-     .then((result) => {
-       console.log(result);
-     })
-     .catch((err) => {
-       console.log(err);
-     })
+      .then((result) => {
+        console.log(result);
+      })
+      .catch((err) => {
+        console.log(err);
+      })
   }
   return (
     <div className='createPostPage'>
