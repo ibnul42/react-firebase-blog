@@ -1,16 +1,17 @@
 import { collection, deleteDoc, doc, getDocs } from 'firebase/firestore';
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
+import GoogleContext from '../Context/GoogleContext';
 import { db } from '../firebase-config';
 import { auth } from '../firebase-config';
 
 function Home({ isAuth }) {
   const [postLists, setPostLists] = useState([]);
   const postsCollectionRef = collection(db, 'posts');
+  const { loggedUser } = useContext(GoogleContext);
 
 
   useEffect(() => {
     const getPosts = async () => {
-      console.log("Hello");
       const res = await getDocs(postsCollectionRef);
       setPostLists(res.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
     }
@@ -24,15 +25,15 @@ function Home({ isAuth }) {
 
   return (
     <div className="homePage">
-      {postLists.map((post) => {
+      {postLists.map((post, id) => {
         return (
-          <div className="post">
+          <div key={id} className="post">
             <div className="postHeader">
               <div className="title">
                 <h1> {post.title}</h1>
               </div>
               <div className="deletePost">
-                {isAuth && post.author.id === auth.currentUser.uid && (
+                {(isAuth && post.author.id === auth.currentUser.uid || loggedUser.role === 'admin') && (
                   <button
                     onClick={() => {
                       deletePost(post.id);

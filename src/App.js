@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Link, Route, Routes } from 'react-router-dom';
+import { Link, Route, Routes } from 'react-router-dom';
 import './App.css';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -7,40 +7,41 @@ import NotFound from './pages/NotFound';
 import { useState } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth } from './firebase-config';
+import Header from './Layout/Homepage/Header/Header'
+import Footer from './Layout/Homepage/Footer/Footer';
+import { GoogleProvider } from './Context/GoogleContext';
+import AllUser from './Admin/AllUser';
+import ProtectedRoute from './ProtectedRoute';
+import EditUser from './Admin/EditUser';
 
 function App() {
-  const [isAuth, setIsAuth] = useState(false);
+  const [isAuth, setIsAuth] = useState(localStorage.getItem('isAuth'));
+  const [signedUser, setSignedUser] = useState({
+    email: '',
+    name: '',
+    role: 'user',
+  })
 
-  const signOutUser = () => {
-    signOut(auth)
-      .then(() => {
-        setIsAuth(false);
-        localStorage.clear();
-        window.location.pathname = '/';
-      })
-      .catch((err) => {
-        console.log(err.message);
-      })
-  }
+
 
   return (
-    <Router>
-      <nav>
-        <Link to='/'>Home</Link>
-        {!isAuth ? <Link to='/login'>Login</Link> : (
-          <>
-            <Link to='/create-post'>Create Post</Link>
-            <Link to='/' onClick={signOutUser}>Logout</Link>
-          </>
-        )}
-      </nav>
-      <Routes>
-        <Route path="/" element={<Home isAuth={isAuth} />} />
-        <Route path="/login" element={<Login setIsAuth={setIsAuth} />} />
-        <Route path="/create-post" element={<CreatePost isAuth={isAuth} />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Router>
+    <GoogleProvider>
+      <div className="d-flex flex-column justify-content-between viewport-sc">
+        <Header isAuth={isAuth} setIsAuth={setIsAuth} />
+        <Routes>
+          <Route path="/" element={<Home isAuth={isAuth} />} />
+          <Route path="/login" element={<Login setIsAuth={setIsAuth} signedUser={signedUser} setSignedUser={setSignedUser} />} />
+          <Route path="/create-post" element={<CreatePost isAuth={isAuth} />} />
+          <Route path="/all-users" element={
+            <ProtectedRoute>
+              <AllUser />
+            </ProtectedRoute>} />
+          <Route path="/user/:id" element={<EditUser />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <Footer />
+      </div>
+    </GoogleProvider>
   )
 }
 
