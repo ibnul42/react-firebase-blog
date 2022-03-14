@@ -6,6 +6,7 @@ import { auth } from "../firebase-config";
 import { getDatabase, ref, onValue, remove } from "firebase/database";
 import { ref as storRef, getDownloadURL } from "firebase/storage";
 import { useNavigate } from "react-router-dom";
+import { Button, Card } from "react-bootstrap";
 
 function Home({ isAuth }) {
   const navigate = useNavigate();
@@ -86,35 +87,37 @@ function Home({ isAuth }) {
 
   return (
     <div className="homePage">
-      {postLists.map((post, id) => {
-        return (
-          <div key={id} className="post">
-            <div className="postHeader">
-              <div className="title">
-                <h1> {post.title}</h1>
-              </div>
-              <div className="deletePost">
-                {((isAuth && post.author.id === auth.currentUser.uid) ||
-                  loggedUser.role === "admin") && (
-                  <div>
-                    <button
-                      onClick={() => {
-                        deletePost(post.uuid);
-                      }}
-                    >
-                      {" "}
-                      &#128465;
-                    </button>
-                    <button onClick={() => editHandler(post.uuid)}>Edit</button>
-                  </div>
-                )}
-              </div>
+      {postLists.length === 0 ? (
+        <p>No post</p>
+      ) : (
+        postLists.map((post, id) => {
+          <Card style={{ width: "18rem" }}>
+            <Card.Img variant="top" src={post.imageUrl} />
+            <Card.Body>
+              <Card.Title>{post.title}</Card.Title>
+              <Card.Text>{post.postText}</Card.Text>
+              <Card.Text>@{post.author.name}</Card.Text>
+              <Button variant="primary">Go somewhere</Button>
+            </Card.Body>
+            <div className="deletePost">
+              {((isAuth && post.author.id === auth.currentUser.uid) ||
+                loggedUser.role === "admin") && (
+                <div>
+                  <button
+                    onClick={() => {
+                      deletePost(post.uuid);
+                    }}
+                  >
+                    {" "}
+                    &#128465;
+                  </button>
+                  <button onClick={() => editHandler(post.uuid)}>Edit</button>
+                </div>
+              )}
             </div>
-            <div className="postTextContainer"> {post.postText} </div>
-            <h3>@{post.author.name}</h3>
-          </div>
-        );
-      })}
+          </Card>;
+        })
+      )}
     </div>
   );
 }

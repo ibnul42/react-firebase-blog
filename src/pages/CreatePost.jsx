@@ -28,17 +28,48 @@ function CreatePost({ isAuth }) {
   });
 
   const createPost = async () => {
-    // realtime
-    await set(ref(realtimeDB, "posts/" + uuid), {
-      title,
-      postText,
-      author: {
-        name: auth.currentUser.displayName,
-        id: auth.currentUser.uid,
+    const storageRef = storRef(storage, `/posts/${uuid}`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const prog = Math.round(
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+        );
+        setProgress(prog);
       },
-      uuid,
-    });
-    uploadFile(file, uuid);
+      (err) => {
+        console.log(err);
+      },
+      () => {
+        console.log("calling db");
+        getDownloadURL(uploadTask.snapshot.ref).then((url) => {
+          console.log("inside db");
+          set(ref(realtimeDB, "posts/" + uuid), {
+            title,
+            postText,
+            author: {
+              name: auth.currentUser.displayName,
+              id: auth.currentUser.uid,
+            },
+            uuid,
+            imageUrl: url,
+          });
+        });
+      }
+    );
+    // realtime
+    // await set(ref(realtimeDB, "posts/" + uuid), {
+    //   title,
+    //   postText,
+    //   author: {
+    //     name: auth.currentUser.displayName,
+    //     id: auth.currentUser.uid,
+    //   },
+    //   uuid,
+    // });
+    // uploadFile(file, uuid);
     // firestore
     await addDoc(postCollectionRef, {
       title,
@@ -54,24 +85,6 @@ function CreatePost({ isAuth }) {
 
   const uploadFile = (file, uuid) => {
     if (!file) return;
-    const storageRef = storRef(storage, `/posts/${uuid}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
-
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        const prog = Math.round(
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-        );
-        setProgress(prog);
-      },
-      (err) => console.log(err),
-      () => {
-        getDownloadURL(uploadTask.snapshot.storRef).then((url) =>
-          console.log(url)
-        );
-      }
-    );
   };
 
   const imgHandler = (e) => {
@@ -104,7 +117,14 @@ function CreatePost({ isAuth }) {
         <div className="imgGp">
           <label htmlFor="">Image</label>
           <input type="file" onChange={imgHandler} />
-          <p>Upload Progress {progress}</p>
+          <div className="progress">
+            <div
+              className="progress-bar progress-bar-striped mt-2"
+              style={{ width: "60%" }}
+            >
+              50%
+            </div>
+          </div>
         </div>
         <button onClick={createPost}>Submit Post</button>
       </div>
